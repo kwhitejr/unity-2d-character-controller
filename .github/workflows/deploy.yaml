@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: "$UNITY_DIR"
+        working-directory: EventDrivenCharacterController
     steps:
       - uses: actions/checkout@v2
         name: Checkout
