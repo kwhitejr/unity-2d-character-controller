@@ -43,6 +43,8 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           targetPlatform: WebGL
+          projectPath: EventDrivenCharacterController
+          # unityVersion: ${{ matrix.unityVersion }}
 
       - uses: actions/upload-artifact@v2
         name: Upload
