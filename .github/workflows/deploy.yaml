@@ -26,6 +26,8 @@ jobs:
           restore-keys: |
             Library-
 
+      - name: Whereami
+        run: ls -lah
       # - uses: game-ci/unity-test-runner@v2
       #   name: Test
       #   env:
@@ -49,6 +51,7 @@ jobs:
           path: build
 
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     # defaults:
     #   run:
