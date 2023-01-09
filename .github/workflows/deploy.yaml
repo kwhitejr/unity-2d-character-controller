@@ -81,16 +81,18 @@ jobs:
         run: aws s3 sync ./WebGL/WebGL s3://$BUCKET --delete
 
       - name: "[Deploy Phase 2] Brotli-compressed files"
+        working-directory: build
         run: |
-          aws s3 cp . s3://$BUCKET \
+          aws s3 cp ./WebGL/WebGL s3://$BUCKET \
             --exclude="*" --include="*.br" \
             --content-encoding br \
             --content-type="binary/octet-stream" \
             --metadata-directive REPLACE --recursive;
 
       - name: "[Deploy Phase 3] Brotli-compressed Javascript"
+        working-directory: build
         run: |
-          aws s3 cp . s3://$BUCKET \
+          aws s3 cp ./WebGL/WebGL s3://$BUCKET \
             --exclude="*" --include="*.js.br" \
             --content-encoding br \
             --content-type="application/javascript" \
