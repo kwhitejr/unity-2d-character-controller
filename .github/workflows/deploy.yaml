@@ -76,6 +76,22 @@ jobs:
           role-duration-seconds: 1200
           role-skip-session-tagging: true
 
-      - name: Deploy static site from public dir to S3 bucket
+      - name: "[Deploy Phase 1] Sync everything from public dir to S3 bucket"
         working-directory: build
         run: aws s3 sync ./WebGL/WebGL s3://$BUCKET --delete
+
+      - name: "[Deploy Phase 2] Brotli-compressed files"
+        run: |
+          aws s3 cp . s3://$BUCKET \
+            --exclude="*" --include="*.br" \
+            --content-encoding br \
+            --content-type="binary/octet-stream" \
+            --metadata-directive REPLACE --recursive;
+
+      - name: "[Deploy Phase 3] Brotli-compressed Javascript"
+        run: |
+          aws s3 cp . s3://$BUCKET \
+            --exclude="*" --include="*.js.br" \
+            --content-encoding br \
+            --content-type="application/javascript" \
+            --metadata-directive REPLACE --recursive;
