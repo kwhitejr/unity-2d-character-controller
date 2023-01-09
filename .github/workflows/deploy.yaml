@@ -8,49 +8,47 @@ env:
   BUCKET: unitykwhitejrcom-origin
   UNITY_DIR: EventDrivenCharacterController
 jobs:
-  build:
-    name: Build For WebGL Platform
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: EventDrivenCharacterController
-    steps:
-      - uses: actions/checkout@v2
-        name: Checkout
+  # build:
+  #   name: Build For WebGL Platform
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       working-directory: EventDrivenCharacterController
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       name: Checkout
 
-      - uses: actions/cache@v2
-        name: Cache
-        with:
-          path: Library
-          key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
-          restore-keys: |
-            Library-
+  #     - uses: actions/cache@v2
+  #       name: Cache
+  #       with:
+  #         path: Library
+  #         key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+  #         restore-keys: |
+  #           Library-
 
-      - name: Whereami
-        run: ls -lah
-      # - uses: game-ci/unity-test-runner@v2
-      #   name: Test
-      #   env:
-      #     UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-      #   with:
-      #     githubToken: ${{ secrets.GITHUB_TOKEN }}
+  #     # - uses: game-ci/unity-test-runner@v2
+  #     #   name: Test
+  #     #   env:
+  #     #     UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+  #     #   with:
+  #     #     githubToken: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: game-ci/unity-builder@v2
-        name: Build
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          targetPlatform: WebGL
-          projectPath: EventDrivenCharacterController
-          # unityVersion: ${{ matrix.unityVersion }}
+  #     - uses: game-ci/unity-builder@v2
+  #       name: Build
+  #       env:
+  #         UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+  #         UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+  #         UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+  #       with:
+  #         targetPlatform: WebGL
+  #         projectPath: EventDrivenCharacterController
+  #         # unityVersion: ${{ matrix.unityVersion }}
 
-      - uses: actions/upload-artifact@v2
-        name: Upload
-        with:
-          name: Build
-          path: build
+  #     - uses: actions/upload-artifact@v2
+  #       name: Upload
+  #       with:
+  #         name: Build
+  #         path: build
 
   deploy:
     needs: build
@@ -59,8 +57,17 @@ jobs:
     #   run:
     #     working-directory: terraform
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         name: Checkout
+
+      - uses: actions/download-artifact@v3
+        name: Download artifacts
+        with:
+          path: public2
+
+      - name: Display structure of downloaded files
+        run: ls -R
+        working-directory: public2
 
       - uses: aws-actions/configure-aws-credentials@v1
         name: Configure AWS credentials from Test account
@@ -73,4 +80,4 @@ jobs:
           role-skip-session-tagging: true
 
       - name: Deploy static site from public dir to S3 bucket
-        run: aws s3 sync ./public s3://$BUCKET --delete
+        run: aws s3 sync ./public2 s3://$BUCKET --delete
