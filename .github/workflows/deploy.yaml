@@ -52,9 +52,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    # defaults:
-    #   run:
-    #     working-directory: terraform
     steps:
       - uses: actions/checkout@v3
         name: Checkout
@@ -80,4 +77,5 @@ jobs:
           role-skip-session-tagging: true
 
       - name: Deploy static site from public dir to S3 bucket
-        run: aws s3 sync ./build s3://$BUCKET --delete
+        working-directory: build
+        run: aws s3 sync ./WebGL/WebGL s3://$BUCKET --delete
