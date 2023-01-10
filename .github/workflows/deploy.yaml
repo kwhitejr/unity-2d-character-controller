@@ -62,10 +62,6 @@ jobs:
           name: Build
           path: build
 
-      - name: Display structure of downloaded files
-        run: ls -R
-        working-directory: build
-
       - uses: aws-actions/configure-aws-credentials@v1
         name: Configure AWS credentials from Test account
         with:
