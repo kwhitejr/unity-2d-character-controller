@@ -3,19 +3,67 @@ on:
   push:
     branches:
       - main
-      - terraform-deploys
+
 env:
   BUCKET: unitykwhitejrcom-origin
+  UNITY_DIR: EventDrivenCharacterController
 jobs:
-  deploy:
+  build:
+    name: Build For WebGL Platform
     runs-on: ubuntu-latest
-    # defaults:
-    #   run:
-    #     working-directory: terraform
+    defaults:
+      run:
+        working-directory: EventDrivenCharacterController
     steps:
       - uses: actions/checkout@v2
-      - name: Configure AWS credentials from Test account
-        uses: aws-actions/configure-aws-credentials@v1
+        name: Checkout
+
+      - uses: actions/cache@v2
+        name: Cache
+        with:
+          path: Library
+          key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-
+
+      # - uses: game-ci/unity-test-runner@v2
+      #   name: Test
+      #   env:
+      #     UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      #   with:
+      #     githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: game-ci/unity-builder@v2
+        name: Build
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: WebGL
+          projectPath: EventDrivenCharacterController
+
+      - uses: actions/upload-artifact@v2
+        name: Upload
+        with:
+          name: Build
+          path: build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout
+
+      - uses: actions/download-artifact@v3
+        name: Download artifacts
+        with:
+          name: Build
+          path: build
+
+      - uses: aws-actions/configure-aws-credentials@v1
+        name: Configure AWS credentials from Test account
         with:
           aws-region: us-east-1
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -23,5 +71,25 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-duration-seconds: 1200
           role-skip-session-tagging: true
-      - name: Deploy static site from public dir to S3 bucket
-        run: aws s3 sync ./public s3://$BUCKET --delete
+
+      - name: "[Deploy Phase 1] Sync everything from public dir to S3 bucket"
+        working-directory: build
+        run: aws s3 sync ./WebGL/WebGL s3://$BUCKET --delete
+
+      - name: "[Deploy Phase 2] Brotli-compressed files"
+        working-directory: build
+        run: |
+          aws s3 cp ./WebGL/WebGL s3://$BUCKET \
+            --exclude="*" --include="*.br" \
+            --content-encoding br \
+            --content-type="binary/octet-stream" \
+            --metadata-directive REPLACE --recursive;
+
+      - name: "[Deploy Phase 3] Brotli-compressed Javascript"
+        working-directory: build
+        run: |
+          aws s3 cp ./WebGL/WebGL s3://$BUCKET \
+            --exclude="*" --include="*.js.br" \
+            --content-encoding br \
+            --content-type="application/javascript" \
+            --metadata-directive REPLACE --recursive;
