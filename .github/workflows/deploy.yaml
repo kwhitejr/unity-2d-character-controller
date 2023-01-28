@@ -93,3 +93,12 @@ jobs:
             --content-encoding br \
             --content-type="application/javascript" \
             --metadata-directive REPLACE --recursive;
+
+      - name: "[Deploy Phase 4] Brotli-compressed WASM"
+        working-directory: build
+        run: |
+          aws s3 cp ./WebGL/WebGL s3://$BUCKET \
+            --exclude="*" --include="*.wasm.br" \
+            --content-encoding br \
+            --content-type="application/wasm" \
+            --metadata-directive REPLACE --recursive;
