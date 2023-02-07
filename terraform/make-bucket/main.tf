@@ -13,11 +13,13 @@ provider "aws" {
 }
 
 locals {
-  sub             = "unity"
-  domain_name     = "kwhitejr.com"
+  domain_name     = "kwhitejr.com" # Use your own domain.
+  sub             = "unity"        # Choose your subdomain
   sub_domain_name = "${local.sub}.${local.domain_name}"
 }
 
+# My domain, kwhitejr.com, is already a Route53 Zone on AWS.
+# You may have extra work to get your domain setup in AWS.
 data "aws_route53_zone" "main" {
   name         = local.domain_name
   private_zone = false
@@ -31,19 +33,18 @@ module "acm_request_certificate" {
   source = "cloudposse/acm-request-certificate/aws"
 
   # Cloud Posse recommends pinning every module to a specific version
-  # version = "x.x.x"
-  domain_name = local.sub_domain_name
-  # subject_alternative_names         = ["a.example.com", "b.example.com", "*.c.example.com"]
+  version                           = "0.17.0"
+  domain_name                       = local.sub_domain_name
   process_domain_validation_options = true
   ttl                               = "300"
 }
 
 module "cdn" {
   source = "cloudposse/cloudfront-s3-cdn/aws"
-  # Cloud Posse recommends pinning every module to a specific version
-  # version = "x.x.x"
 
-  name = local.sub_domain_name
+  # Cloud Posse recommends pinning every module to a specific version
+  version = "0.84.0"
+  name    = local.sub_domain_name
 
   # DNS Settings
   aliases                 = [local.sub_domain_name]
@@ -62,5 +63,8 @@ module "cdn" {
   error_document              = "index.html"
 
   acm_certificate_arn = module.acm_request_certificate.arn
-  depends_on          = [module.acm_request_certificate]
+
+  # NOTE: not sure why this dependency assertion doesn't seem to work.
+  # Deploy of this module fails (for me) unless the ACM is deployed first and independently.
+  depends_on = [module.acm_request_certificate]
 }
